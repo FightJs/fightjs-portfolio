@@ -154,6 +154,11 @@
   --c-ui-accent: oklch(88% 0.15 125);
   --c-ui-accent-ink: oklch(20% 0.04 125);
   --c-ui-olive: oklch(42% 0.08 125);
+  --c-ui-olive-soft: oklch(93% 0.035 125);
+  --c-ui-amber-soft: oklch(94% 0.038 85);
+  --c-ui-amber-ink: oklch(40% 0.095 65);
+  --c-ui-coral: oklch(64% 0.155 30);
+  --c-ui-coral-soft: oklch(93% 0.04 30);
   --c-ui-canvas: oklch(18% 0.006 110);
   --c-ui-shadow: oklch(2% 0.01 110 / 60%);
 
@@ -302,6 +307,11 @@
   --ui-accent: var(--c-ui-accent);
   --ui-accent-ink: var(--c-ui-accent-ink);
   --ui-olive: var(--c-ui-olive);
+  --ui-olive-soft: var(--c-ui-olive-soft);
+  --ui-amber-soft: var(--c-ui-amber-soft);
+  --ui-amber-ink: var(--c-ui-amber-ink);
+  --ui-coral: var(--c-ui-coral);
+  --ui-coral-soft: var(--c-ui-coral-soft);
   --ui-canvas: var(--c-ui-canvas);
   --ui-shadow: var(--c-ui-shadow);
 

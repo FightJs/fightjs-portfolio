@@ -1,4 +1,4 @@
-import { anim, cssVar, env, fitCanvas, qs, rand, Scope } from '../env';
+import { anim, cssVar, env, fitCanvas, qs, rand, reset, Scope } from '../env';
 import { icon } from '../icons';
 import { buildShell, type WorldDef, type WorldInst } from '../types';
 
@@ -316,13 +316,44 @@ function create(): WorldInst {
         return;
       }
       await Promise.all(leaving.map((s) => anim(s, [{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in' })));
-      stages.forEach((s) => (s.hidden = Number(s.dataset.b) !== b));
-      if (b === 0) runOrbital();
-      await Promise.all(
-        target.map((s) =>
-          anim(s, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 560, delay: 100 }),
+      stages.forEach((s) => {
+        s.hidden = Number(s.dataset.b) !== b;
+        reset(s);
+      });
+      if (b === 0) {
+        runOrbital();
+        await Promise.all(
+          target.map((s) =>
+            anim(s, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay: 80 }),
+          ),
+        );
+        return;
+      }
+      running = false;
+      cancelAnimationFrame(raf);
+      const b1Head = root.querySelector('.open-b1-head');
+      const lanes = Array.from(root.querySelectorAll<HTMLElement>('.trio-lane'));
+      const bars = Array.from(root.querySelectorAll<HTMLElement>('.trio-lane-bar'));
+      target.forEach((s) => (s.style.opacity = '1'));
+      reset(b1Head, ...lanes, ...bars);
+      await Promise.all([
+        anim(b1Head, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420 }),
+        ...lanes.map((lane, idx) =>
+          anim(
+            lane,
+            [{ opacity: 0, transform: 'translateX(-16px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 460, delay: 60 + idx * 80, fill: 'both' },
+          ),
         ),
-      );
+        ...bars.map((bar, idx) =>
+          anim(
+            bar,
+            [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }],
+            { duration: 400, delay: 140 + idx * 80, fill: 'both' },
+          ),
+        ),
+      ]);
+      reset(b1Head, ...lanes, ...bars);
     },
     destroy() {
       scope.cancel();

@@ -3,11 +3,10 @@ import { icon } from '../icons';
 import { narrHTML, swapNarr, switchView, type NarrCopy } from '../narr';
 import { buildShell, phaseHTML, setPhase, type WorldDef, type WorldInst } from '../types';
 
-const NOTE = '示意演示：对话与方案均为预置，不调用 AI，不是真实咨询或交付结果。';
 const COPY: NarrCopy[] = [
-  { proj: '直播间智能搭建 Live Craft', h: '需求散在聊天里', p: '品牌、品类、预算、场地、设备，被说成一句句零散的话，没人替你整理。', note: NOTE },
-  { proj: '直播间智能搭建 Live Craft', h: '把聊天变成一张调研表', p: '调研表状态机决定下一句问什么；跑题时纠偏，选择题给快捷选项，中断后能续接。产出唯一需求真相源 form_state。', note: NOTE },
-  { proj: '直播间智能搭建 Live Craft', h: '从调研表到交付包', p: '方案文档是唯一真相源：三视图、环绕视频、设备清单都从它派生，打包前交叉校验。', note: '示意演示：设备、方案与画面均为预置示意，不是真实生成或供应商交付结果。' },
+  { proj: '直播间智能搭建 Live Craft', h: '需求散在聊天里', p: '品牌、品类、预算、场地、设备，被说成一句句零散的话，没人替你整理。', note: '场景痛点：面向品牌主理人、主播与运营团队，解决直播间筹备阶段的多维沟通断层与反复报价。' },
+  { proj: '直播间智能搭建 Live Craft', h: '把聊天变成一张调研表', p: '调研表状态机决定下一句问什么；跑题时纠偏，选择题给快捷选项，中断后能续接。产出唯一需求真相源 form_state。', note: '状态机引擎：React 19 交互终端配合 FastAPI 驱动调研表状态机，支持跑题纠偏与跨会话断点续接。' },
+  { proj: '直播间智能搭建 Live Craft', h: '从调研表到交付包', p: '方案文档是唯一真相源：三视图、环绕视频、设备清单都从它派生，打包前交叉校验。', note: '管线与校验：结合 Qdrant 向量与知识关系检索生成 plan.json，打包前执行设备与预算交叉校验。' },
 ];
 
 const FIELDS: [string, string][] = [['role', '身份'], ['vertical', '品类'], ['space', '场地'], ['budget', '预算档'], ['goal', '目标']];
@@ -23,7 +22,7 @@ const TIERS: [string, string][] = [['性价比', '预算优先'], ['进阶', '�
 const PACK: [string, string][] = [['file', '设备与规划 PDF'], ['image', '三视图预览图'], ['clapper', '环绕预览视频'], ['layers', '设备清单 Excel']];
 
 function planSVG(): string {
-  return `<svg class="plan" viewBox="0 0 200 150" role="img" aria-label="直播间空间示意平面图，预置示例">
+  return `<svg class="plan" viewBox="0 0 200 150" role="img" aria-label="直播间 0°、120°、240° 空间布局三视图">
     <g class="plan-g">
       <rect class="p-room" x="22" y="14" width="156" height="118" rx="3"/>
       <rect class="p-wall" x="22" y="14" width="156" height="7"/>
@@ -47,20 +46,20 @@ function panelHTML(): string {
       <div class="st-chat">
         <header class="st-chead"><span class="st-avatar">${icon('ring', 18)}</span><b>小搭 · 直播间搭建助手</b><span class="st-sp"></span><span class="st-pill">提前结束并提交</span></header>
         <div class="st-thread" data-thread></div>
-        <div class="st-input" aria-hidden="true"><span>示意界面，不可输入</span><span class="st-send">${icon('send', 15)}</span></div>
+        <div class="st-input" aria-hidden="true"><span>描述你的直播品类、场地条件或预算区间…</span><span class="st-send">${icon('send', 15)}</span></div>
       </div>
       <aside class="st-form">
         <h4>AI 结构化内容</h4>
         <p class="st-sub">进度仅统计必填信息</p>
         <div class="st-meter" role="img" aria-label="必填信息进度"><span data-fill></span></div>
         <ul class="st-fields">${FIELDS.map(([k, n]) => `<li data-k="${k}"><span class="k">${n}</span><span class="v">待采集</span></li>`).join('')}</ul>
-        <pre class="st-json" data-json aria-label="form_state 示意"></pre>
+        <pre class="st-json" data-json aria-label="form_state 结构化需求状态"></pre>
       </aside>
     </section>
     <section class="st-view" data-view="plan" hidden>
       <ol class="st-pipe" aria-label="方案管线">${PIPE.map((p) => `<li>${p}</li>`).join('')}</ol>
       <div class="st-body">
-        <section class="st-eq"><h4>设备清单（示例）</h4>
+        <section class="st-eq"><h4>推荐设备清单</h4>
           <ul>${EQUIP.map(([k, n, d]) => `<li><span class="k">${k}</span><b>${n}</b><span class="d">${d}</span></li>`).join('')}</ul>
           <div class="st-tiers" aria-label="推荐套餐">${TIERS.map(([n, d]) => `<span><b>${n}</b>${d}</span>`).join('')}</div>
         </section>

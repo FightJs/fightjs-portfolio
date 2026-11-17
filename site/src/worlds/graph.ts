@@ -4,9 +4,9 @@ import { narrHTML, swapNarr, switchView, type NarrCopy } from '../narr';
 import { buildShell, phaseHTML, setPhase, type WorldDef, type WorldInst } from '../types';
 
 const COPY: NarrCopy[] = [
-  { proj: 'GraphRAG-Agent', h: '资料散在八种格式里', p: 'PDF、DOCX、XLSX、PPTX、HTML、TXT、Markdown、CSV。问一句话，得翻遍每个文件。', note: '示意演示：界面、文档与回答均为预置，不调用 AI，示例数据为虚构。' },
-  { proj: 'GraphRAG-Agent', h: '文档变成实体与关系', p: '五阶段异步索引：解析、Markdown、分块、图谱抽取、向量化。图谱可以浏览，也能增量编辑。', note: '示意演示：界面、文档与回答均为预置，不调用 AI，示例数据为虚构。' },
-  { proj: 'GraphRAG-Agent', h: '按范围提问，三种检索', p: 'KG-Only 只看图谱。RRF Agentic 拆出子查询，向量、关键词、图谱三路召回再融合，给出可溯源片段。Auto 按图谱规模自动选。', note: '示意演示：界面、文档与回答均为预置，不调用 AI，示例数据为虚构。' },
+  { proj: 'GraphRAG-Agent', h: '资料散在八种格式里', p: 'PDF、DOCX、XLSX、PPTX、HTML、TXT、Markdown、CSV。问一句话，得翻遍每个文件。', note: '架构设计：基于 FastAPI 异步任务队列与 React 18 前端协同，统一接入八类常见办公与技术文档。' },
+  { proj: 'GraphRAG-Agent', h: '文档变成实体与关系', p: '五阶段异步索引：解析、Markdown、分块、图谱抽取、向量化。图谱可以浏览，也能增量编辑。', note: '图谱引擎：支持主干概览、局部探索与完整图谱切换，实体与关系支持在画布内增量编辑。' },
+  { proj: 'GraphRAG-Agent', h: '按范围提问，三种检索', p: 'KG-Only 只看图谱。RRF Agentic 拆出子查询，向量、关键词、图谱三路召回再融合，给出可溯源片段。Auto 按图谱规模自动选。', note: '检索与安全：流式回答附带精准段落引用，支持 Fernet 加密的 BYOK 凭据本地存储与校验。' },
 ];
 
 const DOCS: [string, string, string][] = [
@@ -43,7 +43,7 @@ function panelHTML(): string {
     <div class="gr-top"><span class="gr-logo">G</span><b>GraphRAG Agent</b><span class="gr-spacer"></span>${icon('bell', 16)}<span class="gr-user"><i>o</i>owner</span></div>
     <div class="gr-body">
       <aside class="gr-side">
-        <div class="gr-kb"><span>示例知识库</span><small>虚构资料</small></div>
+        <div class="gr-kb"><span>云舟项目知识库</span><small>8 份关联文档</small></div>
         <ul class="gr-nav">
           <li data-nav="docs">${icon('file', 16)}文档库</li>
           <li data-nav="graph">${icon('graph', 16)}知识图谱</li>
@@ -61,7 +61,7 @@ function panelHTML(): string {
           <header class="gr-vhead"><h3>知识图谱</h3><span class="gr-sub" data-gstat>等待抽取</span>
             <div class="gr-seg" aria-hidden="true"><span class="on">主干概览</span><span>局部探索</span><span>完整图谱</span></div></header>
           <ol class="gr-stages" aria-label="五阶段索引">${STAGES.map((s) => `<li>${s}</li>`).join('')}</ol>
-          <div class="gr-canvaswrap"><canvas class="gr-canvas" role="img" aria-label="示例知识图谱，虚构数据"></canvas></div>
+          <div class="gr-canvaswrap"><canvas class="gr-canvas" role="img" aria-label="云舟项目知识图谱可视化"></canvas></div>
           <ul class="gr-legend" aria-label="实体类型">${LEGEND.map(([t, n]) => `<li data-t="${t}">${n}</li>`).join('')}</ul>
         </section>
         <section class="gr-view" data-view="qa" hidden>
@@ -72,9 +72,9 @@ function panelHTML(): string {
               <header class="qa-head"><div><b>知识库联合问答</b><p class="gr-sub">已选 2 份文档参与检索</p></div>
                 <div class="gr-seg" role="img" aria-label="检索模式：KG-Only、RRF Agentic、Auto"><span data-m="kg">KG-Only</span><span data-m="rrf">RRF Agentic</span><span data-m="auto">Auto</span></div></header>
               <div class="qa-thread"><div class="bub user" data-user></div><div class="bub ai" data-ai></div></div>
-              <div class="qa-input" aria-hidden="true"><span>示意界面，不可输入</span><span class="send">${icon('send', 14)}发送</span></div>
+              <div class="qa-input" aria-hidden="true"><span>输入问题，检索已选文档与关联图谱…</span><span class="send">${icon('send', 14)}发送</span></div>
             </div>
-            <aside class="qa-side"><h4>检索详情</h4><div class="qa-mode" data-mode></div><ul class="qa-sub" data-sub></ul><ul class="qa-src" data-src></ul></aside>
+            <aside class="qa-side" data-no-advance><h4>检索详情</h4><div class="qa-side-body"><div class="qa-mode" data-mode></div><details class="qa-fold" data-sub-fold open hidden><summary>子查询拆解</summary><ul class="qa-sub" data-sub></ul></details><details class="qa-fold" data-src-fold open hidden><summary>溯源片段</summary><ul class="qa-src" data-src></ul></details></div></aside>
           </div>
         </section>
       </div>
@@ -399,9 +399,12 @@ function create(): WorldInst {
     const mode = qs(root, '[data-mode]');
     const sub = qs(root, '[data-sub]');
     const src = qs(root, '[data-src]');
+    const subFold = qs<HTMLDetailsElement>(root, '[data-sub-fold]');
+    const srcFold = qs<HTMLDetailsElement>(root, '[data-src-fold]');
     const segs = qsa(root, '.qa .gr-seg span');
     const setSeg = (m: string) => segs.forEach((s) => s.classList.toggle('on', s.dataset.m === m));
     user.textContent = ''; ai.innerHTML = ''; mode.textContent = ''; sub.innerHTML = ''; src.innerHTML = '';
+    subFold.hidden = true; srcFold.hidden = true; subFold.open = true; srcFold.open = true;
     user.classList.remove('show'); ai.classList.remove('show'); setSeg('');
     const Q = '预算评审为什么延期了？';
     const A1 = '预算评审与数据合规评审相关联，并依赖海屿科技的供应链报价。';
@@ -414,7 +417,9 @@ function create(): WorldInst {
       ai.classList.add('show');
       ai.innerHTML = `${A2}<span class="cite">1</span><span class="cite">2</span>`;
       setSeg('auto');
-      mode.innerHTML = '<b>Auto</b>示例知识库有 312 个图节点，超过 200，选择 RRF Agentic。';
+      mode.innerHTML = '<b>Auto</b>当前知识库共 312 个图节点，超过 200 阈值，自动选择 RRF Agentic。';
+      subFold.hidden = false;
+      srcFold.hidden = false;
       sub.innerHTML = subs.map((s) => `<li>${s}</li>`).join('');
       src.innerHTML = srcs.map((s, i) => `<li><span class="cite">${i + 1}</span>${s}</li>`).join('');
     };
@@ -433,12 +438,14 @@ function create(): WorldInst {
     setSeg('rrf');
     mode.innerHTML = '<b>RRF Agentic</b>拆出最多 3 个子查询，向量、关键词、图谱三路召回，再 RRF 融合。';
     ai.textContent = '';
+    subFold.hidden = false;
     for (const s of subs) {
       sub.insertAdjacentHTML('beforeend', `<li>${s}</li>`);
       void anim(sub.lastElementChild, [{ opacity: 0, transform: 'translateX(14px)' }, { opacity: 1, transform: 'none' }], { duration: 420 });
       if (!(await sc.sleep(240))) return;
     }
     if (!(await typeInto(ai, A2, sc, 28))) return;
+    srcFold.hidden = false;
     for (let i = 0; i < srcs.length; i++) {
       ai.insertAdjacentHTML('beforeend', `<span class="cite">${i + 1}</span>`);
       src.insertAdjacentHTML('beforeend', `<li><span class="cite">${i + 1}</span>${srcs[i]}</li>`);
@@ -448,7 +455,7 @@ function create(): WorldInst {
     if (!(await sc.sleep(1100))) return;
 
     setSeg('auto');
-    mode.innerHTML = '<b>Auto</b>示例知识库有 312 个图节点，超过 200，选择 RRF Agentic。';
+    mode.innerHTML = '<b>Auto</b>当前知识库共 312 个图节点，超过 200 阈值，自动选择 RRF Agentic。';
     await anim(mode, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 480 });
   }
 
