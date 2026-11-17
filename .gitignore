@@ -1,0 +1,12 @@
+# Dependencies & build outputs
+node_modules/
+site/node_modules/
+site/dist/
+
+# Reference screenshots (strictly excluded from repository & deployment)
+参考截图-禁止上站/
+
+# Local agent & OS files
+.agents/
+.DS_Store
+*.log
